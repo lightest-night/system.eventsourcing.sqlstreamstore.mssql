@@ -2,8 +2,8 @@
 
     <PropertyGroup>
         <TargetFramework>netstandard2.1</TargetFramework>
-        <AssemblyName>LightestNight.System.EventSourcing.SqlStreamStore.MSSql</AssemblyName>
-        <RootNamespace>LightestNight.System.EventSourcing.SqlStreamStore.MSSql</RootNamespace>
+        <AssemblyName>LightestNight.System.EventSourcing.SqlStreamStore.MsSql</AssemblyName>
+        <RootNamespace>LightestNight.System.EventSourcing.SqlStreamStore.MsSql</RootNamespace>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
         <IsPackable>true</IsPackable>
@@ -27,14 +27,16 @@
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <NoWarn>1701;1702;CA1303</NoWarn>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <NoWarn>1701;1702;CA1303</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="LightestNight.System.EventSourcing.SqlStreamStore" Version="2.0.0" />
+        <PackageReference Include="LightestNight.System.EventSourcing.SqlStreamStore" Version="2.0.1" />
         <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="3.0.0" />
         <PackageReference Include="SqlStreamStore.MsSql" Version="1.1.3" />
     </ItemGroup>
@@ -44,6 +46,15 @@
             <Pack>True</Pack>
             <PackagePath></PackagePath>
         </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Scripts\CreateSchema.sql" />
+      <EmbeddedResource Include="Scripts\CreateSchema.sql" />
+      <None Remove="Scripts\SetCheckpoint.sql" />
+      <EmbeddedResource Include="Scripts\SetCheckpoint.sql" />
+      <None Remove="Scripts\GetCheckpoint.sql" />
+      <EmbeddedResource Include="Scripts\GetCheckpoint.sql" />
     </ItemGroup>
 
 </Project>
