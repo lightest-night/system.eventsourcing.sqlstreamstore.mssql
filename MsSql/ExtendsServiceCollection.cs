@@ -23,17 +23,18 @@ namespace LightestNight.System.EventSourcing.SqlStreamStore.MsSql
             services.Configure(optionsAccessor);
             
             var serviceProvider = services.BuildServiceProvider();
-            if (!(serviceProvider.GetService<IStreamStore>() is MsSqlStreamStore))
+            if (!(serviceProvider.GetService<IStreamStore>() is MsSqlStreamStoreV3))
             {
                 services.AddSingleton<IStreamStore>(sp =>
                 {
-                    var streamStore = new MsSqlStreamStore(new MsSqlStreamStoreSettings(msSqlOptions.ConnectionString)
-                    {
-                        Schema = msSqlOptions.Schema
-                    });
+                    var streamStore = new MsSqlStreamStoreV3(
+                        new MsSqlStreamStoreV3Settings(msSqlOptions.ConnectionString)
+                        {
+                            Schema = msSqlOptions.Schema
+                        });
 
                     if (msSqlOptions.CreateSchemaIfNotExists)
-                        Task.Run(async () => await streamStore.CreateSchema().ConfigureAwait(false));
+                        Task.Run(async () => await streamStore.CreateSchemaIfNotExists().ConfigureAwait(false));
 
                     return streamStore;
                 });
