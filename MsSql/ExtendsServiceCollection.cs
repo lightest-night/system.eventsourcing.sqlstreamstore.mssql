@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Reflection;
-using System.Threading.Tasks;
 using LightestNight.System.EventSourcing.Checkpoints;
 using LightestNight.System.EventSourcing.SqlStreamStore.MsSql.Checkpoints;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,7 +33,7 @@ namespace LightestNight.System.EventSourcing.SqlStreamStore.MsSql
                         });
 
                     if (msSqlOptions.CreateSchemaIfNotExists)
-                        Task.Run(async () => await streamStore.CreateSchemaIfNotExists().ConfigureAwait(false));
+                        streamStore.CreateSchemaIfNotExists().Wait();
 
                     return streamStore;
                 });
@@ -46,7 +45,7 @@ namespace LightestNight.System.EventSourcing.SqlStreamStore.MsSql
                 {
                     var checkpointManager = new MsSqlCheckpointManager(sp.GetRequiredService<IOptions<MsSqlEventSourcingOptions>>(), sp.GetRequiredService<ILogger<MsSqlCheckpointManager>>());
                     if (msSqlOptions.CreateSchemaIfNotExists)
-                        Task.Run(async () => await checkpointManager.CreateSchemaIfNotExists().ConfigureAwait(false));
+                        checkpointManager.CreateSchemaIfNotExists().Wait();
 
                     return checkpointManager;
                 });
