@@ -3,7 +3,6 @@ using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
-using LightestNight.System.EventSourcing.Checkpoints;
 using LightestNight.System.Utilities.Extensions;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
@@ -11,7 +10,7 @@ using Microsoft.Extensions.Options;
 
 namespace LightestNight.System.EventSourcing.SqlStreamStore.MsSql.Checkpoints
 {
-    public class MsSqlCheckpointManager : ICheckpointManager
+    public class MsSqlCheckpointManager
     {
         private readonly Func<SqlConnection> _createConnection;
         private readonly MsSqlEventSourcingOptions _options;
@@ -27,24 +26,6 @@ namespace LightestNight.System.EventSourcing.SqlStreamStore.MsSql.Checkpoints
             _createConnection = () => new SqlConnection(_options.ConnectionString);
         }
         
-        [SuppressMessage("ReSharper", "CA2100")]
-        public async Task<int?> GetCheckpoint(string checkpointId, CancellationToken cancellationToken = new CancellationToken())
-        {
-            _logger.LogTrace(new EventId(3, "Get Checkpoint"), $"Getting Checkpoint with Id '{checkpointId}'");
-            await using var connection = _createConnection();
-            await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
-            await using var command = new SqlCommand(_scripts.GetCheckpoint, connection)
-            {
-                CommandTimeout = _options.CommandTimeout
-            };
-            command.Parameters.Add(new SqlParameter("@CheckpointId", SqlDbType.NVarChar, 500)
-            {
-                Value = checkpointId
-            });
-
-            return await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false) as int?;
-        }
-
         [SuppressMessage("ReSharper", "CA2100")]
         public async Task<long?> GetGlobalCheckpoint(CancellationToken cancellationToken = default)
         {
@@ -64,9 +45,9 @@ namespace LightestNight.System.EventSourcing.SqlStreamStore.MsSql.Checkpoints
         }
 
         [SuppressMessage("ReSharper", "CA2100")]
-        public async Task SetCheckpoint<TCheckpoint>(string checkpointId, TCheckpoint checkpoint, CancellationToken cancellationToken = default)
+        public async Task SetGlobalCheckpoint(long? checkpoint, CancellationToken cancellationToken = default)
         {
-            _logger.LogTrace(new EventId(2, "Set Checkpoint"), $"Setting Checkpoint with Id '{checkpointId}' and Checkpoint '{checkpoint}'");
+            _logger.LogTrace(new EventId(2, "Set Checkpoint"), $"Setting Global Checkpoint: '{checkpoint}'");
             await using var connection = _createConnection();
             await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
             await using var command = new SqlCommand(_scripts.SetCheckpoint, connection)
@@ -75,7 +56,7 @@ namespace LightestNight.System.EventSourcing.SqlStreamStore.MsSql.Checkpoints
             };
             command.Parameters.Add(new SqlParameter("@CheckpointId", SqlDbType.NVarChar, 500)
             {
-                Value = checkpointId
+                Value = Constants.GlobalCheckpointId
             });
             command.Parameters.AddWithValue("@Checkpoint", checkpoint);
 

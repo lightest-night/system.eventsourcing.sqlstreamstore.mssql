@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Reflection;
+using System.Threading.Tasks;
 using LightestNight.System.EventSourcing.Checkpoints;
 using LightestNight.System.EventSourcing.SqlStreamStore.MsSql.Checkpoints;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using SqlStreamStore;
 
 namespace LightestNight.System.EventSourcing.SqlStreamStore.MsSql
@@ -17,9 +17,9 @@ namespace LightestNight.System.EventSourcing.SqlStreamStore.MsSql
             var msSqlOptions = new MsSqlEventSourcingOptions();
             optionsAccessor?.Invoke(msSqlOptions);
             // ReSharper disable once RedundantAssignment
-            services.AddEventStore(eventSourcingOptions => eventSourcingOptions = msSqlOptions, eventAssemblies);
-
-            services.Configure(optionsAccessor);
+            services.AddEventStore(eventSourcingOptions => eventSourcingOptions = msSqlOptions, eventAssemblies)
+                .Configure(optionsAccessor)
+                .AddSingleton<MsSqlCheckpointManager>();
             
             var serviceProvider = services.BuildServiceProvider();
             if (!(serviceProvider.GetService<IStreamStore>() is MsSqlStreamStoreV3))
@@ -33,23 +33,20 @@ namespace LightestNight.System.EventSourcing.SqlStreamStore.MsSql
                         });
 
                     if (msSqlOptions.CreateSchemaIfNotExists)
-                        streamStore.CreateSchemaIfNotExists().Wait();
+                        Task.WhenAll(
+                            streamStore.CreateSchemaIfNotExists(),
+                            sp.GetRequiredService<MsSqlCheckpointManager>().CreateSchemaIfNotExists()
+                        ).Wait();
 
                     return streamStore;
                 });
             }
 
-            if (!(serviceProvider.GetService<ICheckpointManager>() is MsSqlCheckpointManager))
-            {
-                services.AddSingleton<ICheckpointManager>(sp =>
-                {
-                    var checkpointManager = new MsSqlCheckpointManager(sp.GetRequiredService<IOptions<MsSqlEventSourcingOptions>>(), sp.GetRequiredService<ILogger<MsSqlCheckpointManager>>());
-                    if (msSqlOptions.CreateSchemaIfNotExists)
-                        checkpointManager.CreateSchemaIfNotExists().Wait();
+            services.TryAddSingleton<GetGlobalCheckpoint>(sp =>
+                sp.GetRequiredService<MsSqlCheckpointManager>().GetGlobalCheckpoint);
 
-                    return checkpointManager;
-                });
-            }
+            services.TryAddSingleton<SetGlobalCheckpoint>(sp =>
+                sp.GetRequiredService<MsSqlCheckpointManager>().SetGlobalCheckpoint);
 
             return services;
         }
