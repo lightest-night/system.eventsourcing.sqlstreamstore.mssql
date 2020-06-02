@@ -36,7 +36,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="LightestNight.System.EventSourcing.SqlStreamStore" Version="2.0.8" />
+        <PackageReference Include="LightestNight.System.EventSourcing.SqlStreamStore" Version="2.1.2" />
         <PackageReference Include="SqlStreamStore.MsSql" Version="1.2.0-beta.8" />
     </ItemGroup>
 
